@@ -5,11 +5,15 @@ Created on Sat Nov 21 15:45:31 2020
 
 @author: matt
 """
+#Server for tcp connected chat application
+
 import socket, threading
 from socket import gethostbyname
+
+#list of all client connections
 CLIENT_LIST = []
 
-
+#establish server connection through tcp connection
 s_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
@@ -21,42 +25,102 @@ s_socket.bind((HOST, PORT))
 s_socket.listen(1)
 print('Chat server started on {HOST} : {PORT}'.format(HOST = HOST, PORT = PORT))
 
+#accepts clients connection to the server 
 def accept_client():
+    
     while True:
-           
-        c_socket, c_address = s_socket.accept()
-        uname = c_socket.recv(1024)
+        #recieve client connection request   
+        c_socket, c_address = s_socket.accept()        
+        uname = c_socket.recv(1024)        
         CLIENT_LIST.append((uname, c_socket))
-        print('{} is now connected'.format(uname.decode('utf-8')))
-        client_thread = threading.Thread(target = broadcast_message, args=[uname, c_socket])
-        client_thread.start()
+        
+        print('{} is now connected'.format(c_address)) 
+        
+        NewUser_Msg = ('{} has joined the chat'.format(uname.decode('utf-8')))        
+        
+        broadcast_thread = threading.Thread(target = broadcast_message, args=[uname, c_socket, c_address])
+        broadcast_thread.start()        
+       
+        #sned join message to other connected clients
+        server_message(c_socket, uname, NewUser_Msg)
 
-def broadcast_message(uname, c_socket):
+#handles all base work for determining what message needs to be sent to clients
+def broadcast_message(uname, c_socket, c_address):
+   
     while True:
         try:
             data = c_socket.recv(1024)
+            #if there is data to be sent
             if data:
-                print ("{} has spoken in the chat".format(uname.decode('utf-8')))
-               
-                send_message(c_socket, uname, data)
+                #if the client happened to send end (quit message)
+                if data.decode('utf-8') == 'end':
+                   
+                    #run leave steps
+                    client_left(c_socket, uname, c_address)
+                    CLIENT_LIST.remove((uname, c_socket))   
+                    break
+                
+                else:
+                    
+                    #sends client message to client message method
+                    print ("{} has spoken in the chat".format(c_address))
+                    client_message(c_socket, uname, data)
+           
+            else:
+                #if no data - user left
+                client_left(c_socket, uname, c_address)
+                CLIENT_LIST.remove((uname, c_socket))   
+                break
                 
         except Exception as x:
+            
             print(x.message)
             break
 
-def send_message(c_socket, uname, msg):
+#method for sending clients the leave message     
+def client_left(c_socket, uname, c_address):
+   
+   leave_message = ("{} has left the chat".format(c_address))
+   
+   print(leave_message)
+   
+   leave_message = ("{} has left the chat".format(uname.decode('utf-8')))
+   
+   server_message(c_socket, uname, leave_message)
+   
+   
+   
+#messages coming directly from the server to the clients   
+def server_message(c_socket, uname, msg):
+    #for every client in the client list
+    for client in CLIENT_LIST:
+        #send message if and only if client is not the one doing the action
+        if client[1] != c_socket:
+            
+            server_message = ('SERVER > {}'.format( msg ))
+            client[1].send((server_message).encode('utf-8'))
+
+#messages coming from 1 client being sent to all other clients   
+def client_message(c_socket, uname, msg):
     
     for client in CLIENT_LIST:
+        
+        #send message if and only if client is not the one doing action
         if client[1] != c_socket:
+            
             updated_msg = ('{user} > {msg}'.format(user = uname.decode('utf-8'), msg = msg.decode('utf-8')) )
             client[1].send((updated_msg).encode('utf-8'))
             
-            
-     
+#method to leanly have threads in
+def run_thread():
+    
+    accept_thread = threading.Thread(target = accept_client)
+    accept_thread.start()
+
+#allows threads to be executed by themselves.
 if __name__ == "__main__":    
    
-
-    thread_ac = threading.Thread(target = accept_client)
-    thread_ac.start()
+    run_thread()
+   
 
    
