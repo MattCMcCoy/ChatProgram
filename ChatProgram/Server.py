@@ -29,7 +29,7 @@ print('Chat server started on {HOST} : {PORT}'.format(HOST = HOST, PORT = PORT))
 def accept_client():
     
     while True:
-        #recieve client connection request   
+        #receive client connection request   
         c_socket, c_address = s_socket.accept()        
         uname = c_socket.recv(1024)        
         CLIENT_LIST.append((uname, c_socket))
@@ -41,7 +41,7 @@ def accept_client():
         broadcast_thread = threading.Thread(target = broadcast_message, args=[uname, c_socket, c_address])
         broadcast_thread.start()        
        
-        #sned join message to other connected clients
+        #send join message to other connected clients
         server_message(c_socket, uname, NewUser_Msg)
 
 #handles all base work for determining what message needs to be sent to clients
@@ -111,8 +111,8 @@ def client_message(c_socket, uname, msg):
             updated_msg = ('{user} > {msg}'.format(user = uname.decode('utf-8'), msg = msg.decode('utf-8')) )
             client[1].send((updated_msg).encode('utf-8'))
             
-#method to leanly have threads in
-def run_thread():
+#method to cleanly have threads in
+def thread():
     
     accept_thread = threading.Thread(target = accept_client)
     accept_thread.start()
@@ -120,7 +120,7 @@ def run_thread():
 #allows threads to be executed by themselves.
 if __name__ == "__main__":    
    
-    run_thread()
+    thread()
    
 
    

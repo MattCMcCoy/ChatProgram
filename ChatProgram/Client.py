@@ -52,7 +52,7 @@ def receive_message():
           c_socket.close()
           sys.exit()
 #threads method to run the threads cleanly        
-def run_threads():      
+def threads():      
   
         send_thread = threading.Thread(target = send_message)
         send_thread.start() 
@@ -63,7 +63,7 @@ def run_threads():
 #allows threads to be executed by themselves.
 if __name__ == "__main__":   
   
-   run_threads()  
+   threads()  
    
         
     
