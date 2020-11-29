@@ -112,15 +112,15 @@ def client_message(c_socket, uname, msg):
             client[1].send((updated_msg).encode('utf-8'))
             
 #method to cleanly have threads in
-def thread():
+def start_server():
     
     accept_thread = threading.Thread(target = accept_client)
     accept_thread.start()
 
-#allows threads to be executed by themselves.
-if __name__ == "__main__":    
+
    
-    thread()
+   
+start_server()
    
 
    
